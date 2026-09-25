@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tarefas Clauduxo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap">
+<style>
+  :root {
+    --fundo: #EEF1F4;
+    --superficie: #FFFFFF;
+    --superficie-2: #F6F8FA;
+    --tinta: #15212B;
+    --suave: #5A6773;
+    --linha: #D9DFE5;
+    --acento: #1F6F5C;
+    --acento-suave: #DCEFE8;
+    --acento-texto: #FFFFFF;
+    --alta: #B83A26;
+    --alta-suave: #F7E3DF;
+    --media: #8A5E0C;
+    --media-suave: #F5ECD8;
+    --baixa: #5F6B77;
+    --baixa-suave: #E8ECF0;
+    --foco: #2B6CB0;
+    --sombra: 0 1px 2px rgba(21, 33, 43, .06), 0 4px 16px rgba(21, 33, 43, .05);
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --texto: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --fundo: #10161B;
+      --superficie: #182028;
+      --superficie-2: #1D2630;
+      --tinta: #E6ECF1;
+      --suave: #97A4AF;
+      --linha: #2A343E;
+      --acento: #4FC3A1;
+      --acento-suave: #173A31;
+      --acento-texto: #0B1B16;
+      --alta: #F08A74;
+      --alta-suave: #3A1F1A;
+      --media: #E0B45A;
+      --media-suave: #362B15;
+      --baixa: #9AA6B1;
+      --baixa-suave: #242E38;
+      --foco: #7FB2F0;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --fundo: #10161B;
+    --superficie: #182028;
+    --superficie-2: #1D2630;
+    --tinta: #E6ECF1;
+    --suave: #97A4AF;
+    --linha: #2A343E;
+    --acento: #4FC3A1;
+    --acento-suave: #173A31;
+    --acento-texto: #0B1B16;
+    --alta: #F08A74;
+    --alta-suave: #3A1F1A;
+    --media: #E0B45A;
+    --media-suave: #362B15;
+    --baixa: #9AA6B1;
+    --baixa-suave: #242E38;
+    --foco: #7FB2F0;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--fundo);
+    color: var(--tinta);
+    font: 16px/1.5 var(--texto);
+    padding-inline: 16px;
+    padding-block: 28px 64px;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .app { max-width: 720px; margin: 0 auto; display: grid; gap: 20px; }
+
+  /* Cabeçalho */
+  .topo { display: grid; gap: 6px; }
+  .topo .data { margin: 0; color: var(--suave); font-size: 14px; letter-spacing: .02em; }
+  .topo h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(30px, 6vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .resumo { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 0; padding: 0; list-style: none; color: var(--suave); font-size: 15px; }
+  .resumo strong { color: var(--tinta); font-variant-numeric: tabular-nums; }
+  .resumo .alerta strong { color: var(--alta); }
+
+  /* Formulário de nova tarefa */
+  .nova {
+    background: var(--superficie);
+    border: 1px solid var(--linha);
+    border-radius: 12px;
+    box-shadow: var(--sombra);
+    padding: 14px;
+    display: grid;
+    gap: 12px;
+  }
+  .nova .linha-titulo { display: flex; gap: 10px; }
+  .campo-texto {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--linha);
+    background: var(--superficie-2);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .campo-texto::placeholder { color: var(--suave); }
+  .nova .opcoes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .rotulo-mini { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); }
+  .grupo { display: flex; align-items: center; gap: 8px; }
+  input[type="date"], select {
+    border: 1px solid var(--linha);
+    background: var(--superficie-2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .atalhos-data { display: flex; gap: 4px; }
+  .segmentos { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; overflow: hidden; }
+  .segmentos input { position: absolute; opacity: 0; pointer-events: none; }
+  .segmentos label { padding: 6px 12px; font-size: 14px; cursor: pointer; border-left: 1px solid var(--linha); background: var(--superficie-2); }
+  .segmentos label:first-of-type { border-left: 0; }
+  .segmentos input:checked + label { background: var(--acento-suave); color: var(--tinta); font-weight: 700; }
+  .segmentos input:focus-visible + label { outline: 2px solid var(--foco); outline-offset: -2px; }
+
+  .botao {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-weight: 700;
+    background: var(--acento);
+    color: var(--acento-texto);
+    white-space: nowrap;
+  }
+  .botao:disabled { opacity: .5; cursor: not-allowed; }
+  .botao-leve {
+    border: 1px solid var(--linha);
+    background: var(--superficie);
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+    color: var(--tinta);
+  }
+  .botao-leve:hover { background: var(--superficie-2); }
+  .botao-perigo { color: var(--alta); border-color: var(--alta); }
+
+  /* Filtros */
+  .barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+  .filtro {
+    border: 1px solid var(--linha);
+    background: transparent;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 14px;
+    color: var(--suave);
+  }
+  .filtro[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--fundo); font-weight: 700; }
+  .filtro .n { font-variant-numeric: tabular-nums; opacity: .8; margin-left: 4px; }
+  .origem { font-size: 13px; color: var(--suave); display: flex; align-items: center; gap: 6px; }
+  .origem::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--acento); }
+
+  .aviso {
+    border: 1px solid var(--linha);
+    background: var(--superficie);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    font-size: 14px;
+  }
+  .aviso.erro { border-color: var(--alta); color: var(--alta); }
+
+  /* Lista */
+  .grupos { display: grid; gap: 22px; }
+  .secao { display: grid; gap: 8px; }
+  .secao-cabeca { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .secao h2 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--suave);
+  }
+  .secao h2 .n { font-variant-numeric: tabular-nums; margin-left: 6px; font-weight: 400; }
+  .secao.atrasadas h2 { color: var(--alta); }
+  .lista { list-style: none; margin: 0; padding: 0; background: var(--superficie); border: 1px solid var(--linha); border-radius: 12px; overflow: hidden; }
+
+  .tarefa { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--linha); }
+  .tarefa:first-child { border-top: 0; }
+  .check {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin-top: 1px;
+    border-radius: 50%;
+    border: 2px solid var(--suave);
+    background: transparent;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  .tarefa.prio-alta .check { border-color: var(--alta); }
+  .check svg { width: 14px; height: 14px; opacity: 0; }
+  .check:hover svg { opacity: .4; }
+  .tarefa.feita .check { background: var(--acento); border-color: var(--acento); color: var(--acento-texto); }
+  .tarefa.feita .check svg { opacity: 1; }
+  .corpo { flex: 1; min-width: 0; display: grid; gap: 4px; }
+  .titulo { overflow-wrap: anywhere; }
+  .tarefa.feita .titulo { color: var(--suave); text-decoration: line-through; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: var(--suave); font-variant-numeric: tabular-nums; }
+  .meta .atrasada { color: var(--alta); font-weight: 700; }
+  .meta .hoje { color: var(--acento); font-weight: 700; }
+  .chip { border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 700; }
+  .chip.alta { background: var(--alta-suave); color: var(--alta); }
+  .chip.media { background: var(--media-suave); color: var(--media); }
+  .chip.baixa { background: var(--baixa-suave); color: var(--baixa); }
+  .chip.exemplo { background: transparent; border: 1px dashed var(--linha); font-weight: 400; }
+  .acoes { display: flex; align-items: center; gap: 2px; flex: none; }
+  .icone {
+    border: 0;
+    background: transparent;
+    color: var(--suave);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+  .icone:hover { background: var(--superficie-2); color: var(--tinta); }
+  .icone svg { width: 17px; height: 17px; }
+  .confirmar { display: flex; align-items: center; gap: 6px; font-size: 14px; flex-wrap: wrap; justify-content: flex-end; }
+
+  .edicao { flex: 1; display: grid; gap: 10px; }
+  .edicao .opcoes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  .vazio {
+    text-align: center;
+    padding: 36px 16px;
+    color: var(--suave);
+    background: var(--superficie);
+    border: 1px dashed var(--linha);
+    border-radius: 12px;
+  }
+  .vazio strong { display: block; color: var(--tinta); font-family: var(--display); font-size: 20px; margin-bottom: 4px; }
+  .dica { font-size: 13px; color: var(--suave); text-align: center; margin: 0; }
+  kbd { font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--linha); border-radius: 4px; padding: 2px 5px; background: var(--superficie); }
+
+  @media (max-width: 480px) {
+    .nova .linha-titulo { flex-direction: column; }
+    .tarefa { padding: 12px; gap: 10px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tarefa { transition: background-color .15s; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="topo">
+    <p class="data" id="data-hoje"></p>
+    <h1>Minhas tarefas</h1>
+    <ul class="resumo" id="resumo" aria-live="polite"></ul>
+  </header>
+
+  <form class="nova" id="form-nova" autocomplete="off">
+    <div class="linha-titulo">
+      <label for="nova-titulo" class="rotulo-mini" hidden>Nova tarefa</label>
+      <input class="campo-texto" id="nova-titulo" name="titulo" type="text" maxlength="200" placeholder="O que você precisa fazer?" required>
+      <button class="botao" type="submit" id="nova-botao">Adicionar</button>
+    </div>
+    <div class="opcoes">
+      <div class="grupo">
+        <label class="rotulo-mini" for="nova-data">Prazo</label>
+        <input type="date" id="nova-data" name="data">
+        <div class="atalhos-data">
+          <button type="button" class="botao-leve" data-dias="0">Hoje</button>
+          <button type="button" class="botao-leve" data-dias="1">Amanhã</button>
+        </div>
+      </div>
+      <div class="grupo" role="radiogroup" aria-label="Prioridade">
+        <span class="rotulo-mini">Prioridade</span>
+        <div class="segmentos">
+          <input type="radio" name="prioridade" id="prio-alta" value="alta"><label for="prio-alta">Alta</label>
+          <input type="radio" name="prioridade" id="prio-media" value="media" checked><label for="prio-media">Média</label>
+          <input type="radio" name="prioridade" id="prio-baixa" value="baixa"><label for="prio-baixa">Baixa</label>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div class="aviso" id="aviso-exemplos" hidden>
+    <span>As tarefas marcadas como <em>exemplo</em> estão aqui só para mostrar como o app funciona.</span>
+    <button type="button" class="botao-leve" id="apagar-exemplos">Apagar exemplos</button>
+  </div>
+  <div class="aviso erro" id="aviso-erro" role="alert" hidden></div>
+
+  <div class="barra">
+    <div class="filtros" id="filtros" role="group" aria-label="Filtrar tarefas">
+      <button type="button" class="filtro" data-filtro="pendentes">Pendentes<span class="n"></span></button>
+      <button type="button" class="filtro" data-filtro="hoje">Para hoje<span class="n"></span></button>
+      <button type="button" class="filtro" data-filtro="concluidas">Concluídas<span class="n"></span></button>
+      <button type="button" class="filtro" data-filtro="todas">Todas<span class="n"></span></button>
+    </div>
+    <span class="origem" id="origem">Carregando…</span>
+  </div>
+
+  <section class="grupos" id="grupos" aria-live="polite"></section>
+
+  <p class="dica">Aperte <kbd>N</kbd> para escrever uma nova tarefa.</p>
+</main>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+
+  const PRIORIDADES = {
+    alta: { rotulo: "Alta", ordem: 0 },
+    media: { rotulo: "Média", ordem: 1 },
+    baixa: { rotulo: "Baixa", ordem: 2 },
+  };
+
+  const ICONES = {
+    check: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+    editar: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3L7 16H4v-3z"/></svg>',
+    excluir: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg>',
+  };
+
+  // ---------- Datas ----------
+  const isoLocal = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const dataDe = (iso) => { const [a, m, d] = iso.split("-").map(Number); return new Date(a, m - 1, d); };
+  const somarDias = (iso, n) => { const d = dataDe(iso); d.setDate(d.getDate() + n); return isoLocal(d); };
+  const hojeIso = () => isoLocal(new Date());
+
+  const fmtLongo = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const fmtCurto = new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", month: "short" });
+  const fmtDia = new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "short" });
+  const limpar = (s) => s.replace(/\./g, "");
+  const maiuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  function rotuloPrazo(iso) {
+    const hoje = hojeIso();
+    if (iso === hoje) return { texto: "Hoje", classe: "hoje" };
+    if (iso === somarDias(hoje, 1)) return { texto: "Amanhã", classe: "" };
+    if (iso === somarDias(hoje, -1)) return { texto: "Ontem", classe: "atrasada" };
+    const d = dataDe(iso);
+    if (iso < hoje) return { texto: "Venceu em " + limpar(fmtDia.format(d)), classe: "atrasada" };
+    return { texto: limpar(fmtCurto.format(d)), classe: "" };
+  }
+
+  const novoId = () => "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  // ---------- Armazenamento ----------
+  function exemplos() {
+    const hoje = hojeIso();
+    const agora = Date.now();
+    return [
+      { id: novoId(), titulo: "Pagar a conta de luz", prazo: hoje, prioridade: "alta", feita: false, criadaEm: agora, exemplo: true },
+      { id: novoId(), titulo: "Marcar consulta no dentista", prazo: somarDias(hoje, 1), prioridade: "media", feita: false, criadaEm: agora + 1, exemplo: true },
+      { id: novoId(), titulo: "Revisar as anotações da semana", prazo: somarDias(hoje, 3), prioridade: "media", feita: false, criadaEm: agora + 2, exemplo: true },
+      { id: novoId(), titulo: "Ler 20 páginas do livro", prazo: "", prioridade: "baixa", feita: false, criadaEm: agora + 3, exemplo: true },
+      { id: novoId(), titulo: "Criar o repositório no GitHub", prazo: somarDias(hoje, -1), prioridade: "media", feita: true, feitaEm: agora, criadaEm: agora - 1, exemplo: true },
+    ];
+  }
+
+  // Salva no próprio navegador (usado quando o app roda fora do claude.ai).
+  function criarArmazemLocal() {
+    const CHAVE = "clauduxo.tarefas.v1";
+    let lista = [];
+    let primeiraVez = false;
+    let ouvinte = () => {};
+    try {
+      const bruto = localStorage.getItem(CHAVE);
+      if (bruto === null) primeiraVez = true;
+      else lista = JSON.parse(bruto) || [];
+    } catch {
+      primeiraVez = true;
+    }
+    if (primeiraVez) lista = exemplos();
+    const salvar = () => {
+      try { localStorage.setItem(CHAVE, JSON.stringify(lista)); } catch {}
+      ouvinte(lista.slice());
+    };
+    return {
+      origem: "Salvo neste navegador",
+      assinar(cb) { ouvinte = cb; if (primeiraVez) salvar(); else cb(lista.slice()); },
+      async adicionar(t) { lista.push(t); salvar(); },
+      async atualizar(id, mudancas) { lista = lista.map((t) => (t.id === id ? { ...t, ...mudancas } : t)); salvar(); },
+      async remover(id) { lista = lista.filter((t) => t.id !== id); salvar(); },
+    };
+  }
+
+  // Salva na nuvem do claude.ai (sincroniza entre celular e computador).
+  function criarArmazemNuvem(db) {
+    const colecao = db.collection("tasks");
+    return {
+      origem: "Salvo na nuvem",
+      assinar(cb, erro) {
+        colecao.onSnapshot((snap) => cb(snap.docs.map((d) => ({ ...d.data(), id: d.id }))), erro);
+      },
+      adicionar(t) { const { id, ...corpo } = t; return colecao.doc(id).set(corpo); },
+      atualizar(id, mudancas) { return colecao.doc(id).update(mudancas); },
+      remover(id) { return colecao.doc(id).delete(); },
+    };
+  }
+
+  // ---------- Estado ----------
+  let armazem = null;
+  let tarefas = [];
+  let carregado = false;
+  let filtro = "pendentes";
+  let editandoId = null;
+  let confirmandoId = null;
+  let confirmandoLimpeza = false;
+
+  try {
+    const salvo = localStorage.getItem("clauduxo.filtro");
+    if (["pendentes", "hoje", "concluidas", "todas"].includes(salvo)) filtro = salvo;
+  } catch {}
+
+  function mostrarErro(texto) {
+    const aviso = $("#aviso-erro");
+    aviso.textContent = texto;
+    aviso.hidden = !texto;
+  }
+
+  async function executar(promessa) {
+    try {
+      await promessa;
+      mostrarErro("");
+    } catch (e) {
+      const codigo = e && e.code;
+      if (codigo === "invalid_argument") mostrarErro("Você não tem permissão para alterar esta lista.");
+      else if (codigo === "quota_exceeded") mostrarErro("A lista atingiu o limite de tarefas. Apague tarefas concluídas para liberar espaço.");
+      else mostrarErro("Não foi possível salvar a alteração. Verifique a conexão e tente de novo.");
+    }
+  }
+
+  // ---------- Agrupamento ----------
+  const porPrioridade = (a, b) =>
+    (PRIORIDADES[a.prioridade]?.ordem ?? 1) - (PRIORIDADES[b.prioridade]?.ordem ?? 1) ||
+    (a.prazo || "9999").localeCompare(b.prazo || "9999") ||
+    (a.criadaEm || 0) - (b.criadaEm || 0);
+  const porPrazo = (a, b) =>
+    (a.prazo || "9999").localeCompare(b.prazo || "9999") || porPrioridade(a, b);
+
+  function agruparPendentes(lista) {
+    const hoje = hojeIso();
+    const amanha = somarDias(hoje, 1);
+    const semana = somarDias(hoje, 7);
+    const grupos = [
+      { chave: "atrasadas", titulo: "Atrasadas", itens: [], ordenar: porPrazo },
+      { chave: "hoje", titulo: "Hoje", itens: [], ordenar: porPrioridade },
+      { chave: "amanha", titulo: "Amanhã", itens: [], ordenar: porPrioridade },
+      { chave: "semana", titulo: "Próximos 7 dias", itens: [], ordenar: porPrazo },
+      { chave: "depois", titulo: "Mais adiante", itens: [], ordenar: porPrazo },
+      { chave: "sem-data", titulo: "Sem prazo", itens: [], ordenar: porPrioridade },
+    ];
+    const g = Object.fromEntries(grupos.map((x) => [x.chave, x]));
+    for (const t of lista) {
+      if (!t.prazo) g["sem-data"].itens.push(t);
+      else if (t.prazo < hoje) g.atrasadas.itens.push(t);
+      else if (t.prazo === hoje) g.hoje.itens.push(t);
+      else if (t.prazo === amanha) g.amanha.itens.push(t);
+      else if (t.prazo <= semana) g.semana.itens.push(t);
+      else g.depois.itens.push(t);
+    }
+    return grupos.filter((x) => x.itens.length).map((x) => ({ ...x, itens: x.itens.sort(x.ordenar) }));
+  }
+
+  function grupoConcluidas(lista) {
+    return {
+      chave: "concluidas",
+      titulo: "Concluídas",
+      itens: lista.slice().sort((a, b) => (b.feitaEm || 0) - (a.feitaEm || 0)),
+      limpavel: true,
+    };
+  }
+
+  // ---------- Desenho ----------
+  function el(tag, props = {}, filhos = []) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") n.className = v;
+      else if (k === "text") n.textContent = v;
+      else if (k === "html") n.innerHTML = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) n.setAttribute(k, v === true ? "" : v);
+    }
+    for (const f of [].concat(filhos)) if (f) n.append(f);
+    return n;
+  }
+
+  function desenharResumo() {
+    const hoje = hojeIso();
+    const pendentes = tarefas.filter((t) => !t.feita);
+    const atrasadas = pendentes.filter((t) => t.prazo && t.prazo < hoje).length;
+    const deHoje = pendentes.filter((t) => t.prazo === hoje).length;
+    const resumo = $("#resumo");
+    const itens = [
+      el("li", {}, [el("strong", { text: String(pendentes.length) }), " pendentes"]),
+      el("li", {}, [el("strong", { text: String(deHoje) }), " para hoje"]),
+    ];
+    if (atrasadas) itens.push(el("li", { class: "alerta" }, [el("strong", { text: String(atrasadas) }), atrasadas === 1 ? " atrasada" : " atrasadas"]));
+    resumo.replaceChildren(...itens);
+    $("#data-hoje").textContent = maiuscula(fmtLongo.format(new Date()));
+  }
+
+  function desenharFiltros() {
+    const hoje = hojeIso();
+    const pendentes = tarefas.filter((t) => !t.feita);
+    const contagem = {
+      pendentes: pendentes.length,
+      hoje: pendentes.filter((t) => t.prazo && t.prazo <= hoje).length,
+      concluidas: tarefas.length - pendentes.length,
+      todas: tarefas.length,
+    };
+    for (const b of document.querySelectorAll(".filtro")) {
+      b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro));
+      b.querySelector(".n").textContent = contagem[b.dataset.filtro];
+    }
+  }
+
+  function linhaTarefa(t) {
+    const li = el("li", { class: `tarefa prio-${t.prioridade || "media"}${t.feita ? " feita" : ""}` });
+
+    if (editandoId === t.id) {
+      li.append(formEdicao(t));
+      return li;
+    }
+
+    li.append(
+      el("button", {
+        type: "button",
+        class: "check",
+        "aria-pressed": String(!!t.feita),
+        "aria-label": (t.feita ? "Desmarcar: " : "Concluir: ") + t.titulo,
+        html: ICONES.check,
+        onclick: () => alternar(t),
+      }),
+    );
+
+    const meta = el("div", { class: "meta" });
+    if (t.prazo) {
+      const r = rotuloPrazo(t.prazo);
+      meta.append(el("span", { class: t.feita ? "" : r.classe, text: r.texto }));
+    }
+    const p = PRIORIDADES[t.prioridade] || PRIORIDADES.media;
+    meta.append(el("span", { class: `chip ${t.prioridade || "media"}`, text: p.rotulo }));
+    if (t.exemplo) meta.append(el("span", { class: "chip exemplo", text: "exemplo" }));
+
+    li.append(el("div", { class: "corpo" }, [el("span", { class: "titulo", text: t.titulo }), meta]));
+
+    if (confirmandoId === t.id) {
+      li.append(
+        el("div", { class: "confirmar" }, [
+          el("span", { text: "Excluir?" }),
+          el("button", { type: "button", class: "botao-leve botao-perigo", text: "Excluir", onclick: () => remover(t.id) }),
+          el("button", { type: "button", class: "botao-leve", text: "Cancelar", onclick: () => { confirmandoId = null; desenhar(); } }),
+        ]),
+      );
+    } else {
+      li.append(
+        el("div", { class: "acoes" }, [
+          el("button", { type: "button", class: "icone", title: "Editar", "aria-label": "Editar: " + t.titulo, html: ICONES.editar, onclick: () => { editandoId = t.id; confirmandoId = null; desenhar(); } }),
+          el("button", { type: "button", class: "icone", title: "Excluir", "aria-label": "Excluir: " + t.titulo, html: ICONES.excluir, onclick: () => { confirmandoId = t.id; editandoId = null; desenhar(); } }),
+        ]),
+      );
+    }
+    return li;
+  }
+
+  function formEdicao(t) {
+    const titulo = el("input", { class: "campo-texto", id: "editar-titulo", type: "text", maxlength: "200", value: t.titulo, "aria-label": "Título da tarefa", required: true });
+    const prazo = el("input", { type: "date", id: "editar-data", value: t.prazo || "", "aria-label": "Prazo" });
+    const prio = el("select", { id: "editar-prioridade", "aria-label": "Prioridade" },
+      Object.entries(PRIORIDADES).map(([valor, p]) => el("option", { value: valor, text: p.rotulo, selected: valor === (t.prioridade || "media") })));
+    const form = el("form", {
+      class: "edicao",
+      onsubmit: (e) => {
+        e.preventDefault();
+        const texto = titulo.value.trim();
+        if (!texto) return;
+        editandoId = null;
+        executar(armazem.atualizar(t.id, { titulo: texto, prazo: prazo.value, prioridade: prio.value }));
+        desenhar();
+      },
+      onkeydown: (e) => { if (e.key === "Escape") { editandoId = null; desenhar(); } },
+    }, [
+      titulo,
+      el("div", { class: "opcoes" }, [
+        prazo,
+        prio,
+        el("button", { type: "submit", class: "botao", text: "Salvar" }),
+        el("button", { type: "button", class: "botao-leve", text: "Cancelar", onclick: () => { editandoId = null; desenhar(); } }),
+      ]),
+    ]);
+    requestAnimationFrame(() => titulo.focus());
+    return form;
+  }
+
+  function secao(grupo) {
+    const cabeca = el("div", { class: "secao-cabeca" }, [
+      el("h2", {}, [grupo.titulo, el("span", { class: "n", text: String(grupo.itens.length) })]),
+    ]);
+    if (grupo.limpavel && grupo.itens.length) {
+      if (confirmandoLimpeza) {
+        cabeca.append(el("div", { class: "confirmar" }, [
+          el("span", { text: `Excluir ${grupo.itens.length} concluída${grupo.itens.length === 1 ? "" : "s"}?` }),
+          el("button", { type: "button", class: "botao-leve botao-perigo", text: "Excluir", onclick: limparConcluidas }),
+          el("button", { type: "button", class: "botao-leve", text: "Cancelar", onclick: () => { confirmandoLimpeza = false; desenhar(); } }),
+        ]));
+      } else {
+        cabeca.append(el("button", { type: "button", class: "botao-leve", text: "Limpar concluídas", onclick: () => { confirmandoLimpeza = true; desenhar(); } }));
+      }
+    }
+    return el("div", { class: `secao ${grupo.chave}` }, [cabeca, el("ul", { class: "lista" }, grupo.itens.map(linhaTarefa))]);
+  }
+
+  function vazio(titulo, texto) {
+    return el("div", { class: "vazio" }, [el("strong", { text: titulo }), el("span", { text: texto })]);
+  }
+
+  function desenharLista() {
+    const area = $("#grupos");
+    if (!carregado) { area.replaceChildren(vazio("Carregando suas tarefas…", "")); return; }
+
+    const hoje = hojeIso();
+    const pendentes = tarefas.filter((t) => !t.feita);
+    const concluidas = tarefas.filter((t) => t.feita);
+    let grupos = [];
+
+    if (filtro === "pendentes") grupos = agruparPendentes(pendentes);
+    else if (filtro === "hoje") grupos = agruparPendentes(pendentes.filter((t) => t.prazo && t.prazo <= hoje));
+    else if (filtro === "concluidas") grupos = concluidas.length ? [grupoConcluidas(concluidas)] : [];
+    else grupos = [...agruparPendentes(pendentes), ...(concluidas.length ? [grupoConcluidas(concluidas)] : [])];
+
+    if (!grupos.length) {
+      const mensagens = {
+        pendentes: ["Nada pendente", "Adicione uma tarefa no campo acima."],
+        hoje: ["Nada para hoje", "Nenhuma tarefa vence hoje nem está atrasada."],
+        concluidas: ["Nenhuma tarefa concluída ainda", "Marque o círculo ao lado de uma tarefa para concluí-la."],
+        todas: ["Sua lista está vazia", "Adicione uma tarefa no campo acima."],
+      };
+      const [t, s] = mensagens[filtro];
+      area.replaceChildren(vazio(t, s));
+      return;
+    }
+    area.replaceChildren(...grupos.map(secao));
+  }
+
+  function desenhar() {
+    desenharResumo();
+    desenharFiltros();
+    desenharLista();
+    $("#aviso-exemplos").hidden = !tarefas.some((t) => t.exemplo);
+  }
+
+  // ---------- Ações ----------
+  function alternar(t) {
+    const feita = !t.feita;
+    executar(armazem.atualizar(t.id, { feita, feitaEm: feita ? Date.now() : null }));
+  }
+
+  function remover(id) {
+    confirmandoId = null;
+    executar(armazem.remover(id));
+  }
+
+  async function limparConcluidas() {
+    confirmandoLimpeza = false;
+    for (const t of tarefas.filter((x) => x.feita)) await executar(armazem.remover(t.id));
+  }
+
+  $("#apagar-exemplos").addEventListener("click", async () => {
+    for (const t of tarefas.filter((x) => x.exemplo)) await executar(armazem.remover(t.id));
+  });
+
+  $("#form-nova").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!armazem) return;
+    const form = e.currentTarget;
+    const titulo = form.titulo.value.trim();
+    if (!titulo) return;
+    executar(armazem.adicionar({
+      id: novoId(),
+      titulo,
+      prazo: form.data.value,
+      prioridade: form.prioridade.value,
+      feita: false,
+      criadaEm: Date.now(),
+    }));
+    form.titulo.value = "";
+    form.titulo.focus();
+  });
+
+  for (const b of document.querySelectorAll("[data-dias]")) {
+    b.addEventListener("click", () => { $("#nova-data").value = somarDias(hojeIso(), Number(b.dataset.dias)); });
+  }
+
+  $("#filtros").addEventListener("click", (e) => {
+    const b = e.target.closest(".filtro");
+    if (!b) return;
+    filtro = b.dataset.filtro;
+    confirmandoLimpeza = false;
+    try { localStorage.setItem("clauduxo.filtro", filtro); } catch {}
+    desenhar();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const digitando = e.target.closest("input, textarea, select");
+    if (!digitando && (e.key === "n" || e.key === "N") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      $("#nova-titulo").focus();
+    }
+  });
+
+  // Atualiza "Hoje/Amanhã/Atrasada" quando o dia vira com o app aberto.
+  let diaAtual = hojeIso();
+  setInterval(() => { if (hojeIso() !== diaAtual) { diaAtual = hojeIso(); desenhar(); } }, 60000);
+
+  // ---------- Início ----------
+  async function iniciar() {
+    desenhar();
+    let db = null;
+    if (window.claude && typeof window.claude.use === "function") {
+      try { db = await window.claude.use("db"); } catch { db = null; }
+    }
+    armazem = db ? criarArmazemNuvem(db) : criarArmazemLocal();
+    $("#origem").textContent = armazem.origem;
+    armazem.assinar(
+      (lista) => { tarefas = lista; carregado = true; desenhar(); },
+      () => mostrarErro("A conexão com a nuvem caiu. Recarregue a página para ver as mudanças mais recentes."),
+    );
+  }
+  iniciar();
+})();
+</script>
+</body>
+</html>
