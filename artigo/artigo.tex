@@ -1,0 +1,377 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+
+\sloppy
+
+\title{How Much of Traffic Accident Severity Is Predictable from Context?\\
+A Leakage Audit on Brazilian Federal Highway Police Open Data}
+
+% PREENCHER: nome completo e e-mail institucional
+\author{NOME COMPLETO DO AUTOR\inst{1}}
+
+\address{Departamento de Computa\c{c}\~ao -- Universidade Federal do Piau\'i (UFPI)\\
+  Teresina -- PI -- Brazil
+  \email{email@ufpi.edu.br}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Machine learning studies on Brazilian Federal Highway Police (PRF) open data
+often report high scores when predicting accident severity. This work asks how
+much of that severity is predictable from context alone, that is, from where,
+when and under which road conditions an accident happens. Using 342,670
+accidents from 2021 to 2025 and a temporal train/validation/test split, we train
+logistic regression and random forest models on three feature sets: context
+only, context plus accident dynamics, and a deliberately leaky set containing
+outcome-derived columns. On the 2025 test year, context alone reaches a PR-AUC
+of 0.395 against a 0.283 no-skill baseline, accident dynamics raise it to 0.530,
+and leaked columns raise it to 0.97--0.99. The context-only model relies mostly
+on road type and location and flags 99.8\% of accidents in the state of
+Piau\'i as severe. We discuss the implications for model evaluation and for
+operational use.
+\end{abstract}
+
+\section{Introduction}
+
+The Brazilian Federal Highway Police (PRF) records tens of thousands of traffic
+accidents on federal highways every year and publishes them as open data
+\cite{prf2026}. In the five years analysed here, 28.3\% of the recorded
+accidents left at least one person dead or seriously injured. These are the
+cases in which emergency response time and preventive enforcement matter most,
+which makes accident severity a natural target for machine learning.
+
+Several recent Brazilian studies train classifiers on PRF data to predict
+severity \cite{gabardo2025,mafort2025,fuhr2025}. Their feature sets usually mix
+attributes that are known before or at the moment of an accident (location,
+time, weather, road layout) with attributes that only exist after someone has
+described the event (accident type, cause, number of vehicles and people).
+The distinction matters for use: a model meant to guide preventive planning can
+only rely on the first group, while the second group is available only for
+triaging an accident that has already been reported. A third group of columns,
+the victim counts and the official accident classification, is the outcome
+itself, and using it as input is a form of data leakage
+\cite{kaufman2012,kapoor2023}.
+
+The gap addressed here is that existing studies report a single score for a
+single feature set, so it is not possible to tell how much of the performance
+comes from each kind of information. Our research question is: \emph{how much
+of the severity of an accident is predictable from context alone, and how much
+of the performance obtainable on this dataset depends on information that only
+exists after the accident?}
+
+We answer it with a controlled comparison. The same two models, with the same
+hyperparameters and the same temporal split, are trained on three nested feature
+sets. We complement the comparison with three robustness checks (temporal versus
+random split, multiple random seeds, bootstrap confidence intervals) and with an
+error analysis by region and by accident type. The contribution is not a new
+algorithm but an audit: it quantifies where the predictive signal in this
+widely used dataset comes from, reports a negative result on the effect of the
+split strategy, and exposes a regional bias in the context-only model.
+
+\section{Related Work}
+
+% CONFERIR NOS ORIGINAIS: os detalhes atribuidos a cada trabalho abaixo vieram
+% de resumos e nao da leitura integral dos artigos.
+
+\cite{gabardo2025} classify fatal outcomes in accidents on federal highways of
+the Brazilian southern region using PRF data from 2021 to 2024. They compare
+random forest, $k$-nearest neighbours and a multilayer perceptron, balance the
+classes with SMOTE and use SHAP to analyse feature influence, reporting an
+AUC-ROC of 0.99 for random forest and $k$-nearest neighbours.
+\cite{mafort2025} study accidents on federal highways in the state of Rio de
+Janeiro from 2020 to 2023 with several classifiers; they report a random forest
+with 86\% accuracy and an F1-score of 59\% when vehicle and environment
+attributes are used. \cite{fuhr2025} focus on data quality for accidents in
+Santa Catarina: they identify inconsistencies in PRF records and compare random
+forest, support vector machine and multilayer perceptron models trained on the
+original and on the improved data.
+
+Three observations follow. First, the studies are regional, which leaves open
+whether a model behaves equally across the country. Second, the reported
+metrics are hard to compare, because targets, regions and feature sets differ;
+in particular, a pair such as 86\% accuracy and 59\% F1 shows that accuracy
+alone is not informative on an imbalanced target \cite{saito2015}. Third, none
+of them separates the features by the moment at which they become available.
+That separation is the core of the leakage literature: \cite{kaufman2012}
+define leakage as the use of information that would not be legitimately
+available at prediction time, and \cite{kapoor2023} show that it is a
+widespread cause of over-optimistic results in applied machine learning. Our
+work applies this lens to the PRF data at national scale and with a temporal
+evaluation protocol.
+
+\section{Methodology}
+
+\subsection{Data}
+
+We use the PRF open data on accidents grouped by occurrence \cite{prf2026},
+years 2021 to 2025. Each of the 342,670 rows is one accident with 30 attributes.
+The files are public, require no registration, and are downloaded directly by
+the notebook. An accident is labelled \emph{severe} if it has at least one
+death or one seriously injured person, and \emph{non-severe} otherwise. The
+positive class accounts for 28.3\% of the data, a share that stays between
+28.1\% and 28.5\% in every year.
+
+Quality checks found no duplicated rows or identifiers and no inconsistency
+among the victim counts. The only missing values are in the official
+classification (5 rows) and in administrative columns that are not used, so no
+row was discarded. Categories such as ``Ignored'' and ``Not informed'' were
+kept as categories. One change in how the form is filled was identified: the
+share of records with more than one value in the road-layout field rose from
+about 10\% in 2021--2022 to about 25\% from 2023 onwards.
+
+\subsection{Preprocessing and feature sets}
+
+Row-wise transformations were applied before splitting: decimal conversion of
+kilometre and coordinates; hour of day encoded also as sine and cosine;
+month and a weekend indicator; the multi-valued road-layout field expanded into
+12 binary indicators; and an urban-area indicator. Transformations that learn
+from data (standardisation of numeric features and one-hot encoding of
+categorical features, grouping categories with fewer than 50 occurrences) are
+part of a scikit-learn pipeline \cite{pedregosa2011} fitted on the training set
+only.
+
+Three nested feature sets were defined:
+\textbf{(A) Context}: time, location (state, highway, kilometre, coordinates),
+weather, day phase, road type, road layout and urban area;
+\textbf{(B) Context + dynamics}: A plus accident type, accident cause, number of
+vehicles and number of people involved;
+\textbf{(C) With leakage}: B plus the official accident classification and the
+counts of slightly injured, unharmed and unknown-status people. Set C is used
+only to measure the effect of leakage.
+
+\subsection{Experimental protocol}
+
+The data were split by year: 2021--2023 for training (196,939 accidents), 2024
+for validation (73,202) and 2025 for testing (72,529). This mirrors the intended
+use, in which a model trained on the past is applied to future accidents.
+Hyperparameters and the decision threshold were chosen on the validation year;
+the test year was used once, after all choices were fixed.
+
+\subsection{Models and evaluation}
+
+Two trivial references were used: always predicting the majority class and
+always predicting the severe class. Logistic regression served as the main
+baseline and random forest \cite{breiman2001} as the main approach, since it is
+the algorithm most used in the related work and can capture interactions among
+features. Both use class weights inversely proportional to class frequency
+instead of synthetic oversampling. A small grid search on set A selected
+$C = 0.1$ for logistic regression and, for the random forest, 100 trees with
+unlimited depth, at least 20 samples per leaf and each tree trained on half of
+the training rows. The same hyperparameters were reused for sets B and C, so
+that only the features change between scenarios.
+
+Because the target is imbalanced, the main metric is the area under the
+precision--recall curve (PR-AUC), whose no-skill value equals the positive rate
+\cite{saito2015}. We also report ROC-AUC and, at the threshold that maximises F1
+on the validation year, F1, precision, recall and accuracy. Robustness was
+assessed by repeating the experiment with a stratified random split over the
+same rows, by training the random forest with three seeds, and by a bootstrap
+with 500 resamples of the test set. All experiments use a fixed random seed and
+are reproducible from the public notebook.
+
+\section{Results and Discussion}
+
+\subsection{Context alone carries a weak signal}
+
+Table~\ref{tab:main} shows the results for feature set A. The random forest
+reaches a PR-AUC of 0.395 against the no-skill value of 0.283, and a ROC-AUC of
+0.627. There is real but limited information in the context. At the
+F1-maximising threshold the model recovers 81.6\% of the severe accidents, but
+does so by flagging 70.8\% of all accidents; its F1 of 0.465 is only slightly
+above the 0.441 obtained by labelling every accident as severe. Used as a
+ranking, the gain is modest: among the 10\% of accidents with the highest
+predicted risk, 46.9\% are severe, 1.7 times the base rate.
+
+\begin{table}[ht]
+\centering
+\caption{Results on the 2025 test set using context features only (set A).}
+\label{tab:main}
+\begin{tabular}{lcccccc}
+\toprule
+Model & PR-AUC & ROC-AUC & F1 & Precision & Recall & Accuracy \\
+\midrule
+Always non-severe   & 0.283 & 0.500 & 0.000 & 0.000 & 0.000 & 0.717 \\
+Always severe       & 0.283 & 0.500 & 0.441 & 0.283 & 1.000 & 0.283 \\
+Logistic regression & 0.386 & 0.620 & 0.460 & 0.321 & 0.810 & 0.463 \\
+Random forest       & 0.395 & 0.627 & 0.465 & 0.325 & 0.816 & 0.470 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The table also illustrates why accuracy is misleading here: the highest
+accuracy (0.717) belongs to the reference that detects no severe accident at
+all. The grid search points to the probable cause of the weak result. Validation
+PR-AUC varied only between 0.400 and 0.404 across random forest configurations
+and stayed at 0.397 for every regularisation strength of the logistic
+regression, which suggests that the limit lies in the information available in
+the features rather than in model capacity. Variables that plausibly drive
+severity, such as speed, seat-belt use and vehicle type, are absent from the
+occurrence-level data.
+
+\subsection{Leakage audit}
+
+Figure~\ref{fig:sets} compares the three feature sets. Adding accident
+dynamics (set B) raises the random forest PR-AUC from 0.395 to 0.530 and the
+ROC-AUC from 0.627 to 0.715: knowing \emph{how} the accident happened says more
+about severity than all context features together. This is consistent with the
+exploratory analysis, in which 68.0\% of pedestrian collisions and 63.1\% of
+head-on collisions are severe, against 33.7\% on single carriageways, the
+road-type category with the highest share. These attributes, however, only exist after the
+accident.
+
+With outcome-derived columns (set C) the PR-AUC jumps to 0.965 for the random
+forest and 0.994 for logistic regression, with F1 up to 0.982. This is not
+model quality: the added columns are the ones from which the label is computed.
+Logistic regression outperforms the random forest in this scenario, probably
+because the leaked relation is close to a direct rule on a few columns, which a
+linear model captures immediately, while each tree split only sees a random
+subset of the features.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figuras/fig_feature_sets.pdf}
+\caption{PR-AUC and F1 on the 2025 test set for the three feature sets. Dashed
+lines show the no-skill PR-AUC and the F1 of always predicting severe.}
+\label{fig:sets}
+\end{figure}
+
+The practical implication is that a score on this dataset cannot be interpreted
+without knowing which columns were used and when each becomes available: on the
+same data and with the same models, PR-AUC ranges from 0.40 to 0.99 depending
+only on the feature set. Our set B, which is the closest to the feature sets of
+the related work, yields an F1 of 0.51, the same order of magnitude as the 59\%
+reported by \cite{mafort2025}. A direct numerical comparison is not possible,
+because targets, regions and periods differ.
+
+\subsection{Robustness}
+
+Replacing the temporal split by a stratified random split over the same rows
+changed PR-AUC by at most 0.006 (0.395 versus 0.401 for the random forest). We
+expected the random split to inflate the results, given the change in how
+records are filled; the data do not support this hypothesis, and we report it
+as a negative result. The relation between context and severity was stable from
+2021 to 2025. Across three seeds, the standard deviation of the random forest
+PR-AUC was 0.0004. The 95\% bootstrap interval for the PR-AUC difference between
+random forest and logistic regression is 0.007 to 0.012: the random forest is
+consistently better, but by a margin of little practical relevance, while the
+logistic regression trains in a few seconds.
+
+\subsection{Error analysis and regional bias}
+
+The share of severe accidents differs strongly across the country, from about
+19\% in S\~ao Paulo to more than 40\% in Piau\'i, Par\'a and Maranh\~ao
+(Figure~\ref{fig:uf}). Permutation importance on the validation year shows that
+the context-only random forest relies mostly on road type (a PR-AUC drop of
+0.028 when shuffled) and on location features (0.018 for latitude), while
+weather and road layout have an effect close to zero.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figuras/fig_uf.pdf}
+\caption{Share of severe accidents by federative unit, 2021--2025.}
+\label{fig:uf}
+\end{figure}
+
+As a consequence, the model behaves very differently across regions
+(Figure~\ref{fig:regions}). With a single national threshold it flags 99.8\% of
+the accidents in Piau\'i, 93.6\% in the North and 91.0\% in the Northeast as
+severe, against 57.9\% in the Southeast and 61.8\% in the South. The recall
+close to 100\% in Piau\'i is therefore not evidence of good performance. Within
+each region the PR-AUC is only 1.2 to 1.4 times the regional base rate, and the
+ROC-AUC drops to 0.58 in the Central-West: part of the national performance
+comes from telling regions apart, not accidents.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figuras/fig_regions.pdf}
+\caption{Share of accidents flagged as severe and recall of severe accidents by
+region on the 2025 test set, context-only random forest. Dashed lines show the
+national values.}
+\label{fig:regions}
+\end{figure}
+
+Crossing the errors with the accident type, which the context-only model does
+not see, shows what it misses. It detects 95\% of the severe head-on collisions
+but only 73\% of the severe rear-end collisions and 68\% of the severe
+same-direction side collisions. Among the severe accidents that were missed,
+only 12.7\% happened on single carriageways (66.6\% among the detected ones) and
+13.9\% at night (45.0\%). The model has essentially learned the pattern ``single
+carriageway, at night, outside urban areas''; severe accidents outside this
+pattern are the ones it loses.
+
+\subsection{Limitations, biases and impact}
+
+The dataset only contains accidents that happened and were recorded, so the
+model estimates severity given an accident, not the chance of one. This
+explains a counter-intuitive finding: accidents under rain have a lower share of
+severe outcomes (24.1\%) than under clear sky (29.4\%), probably because rain
+produces many minor accidents. Under-reporting of minor accidents may differ
+across regions, in which case part of the regional difference would be an
+artefact of data collection that the model would reproduce. The label merges
+deaths and serious injuries, and the ``seriously injured'' status is assigned
+by the officer at the scene. Only two algorithms and a small hyperparameter
+grid were evaluated. Finally, the predicted probabilities are not calibrated:
+among accidents scored around 0.45, only 25\% are severe, a consequence of class
+weighting.
+
+For these reasons the context-only model should not support decisions about
+individual occurrences: it would prioritise almost every accident in the North
+and Northeast and miss about 28\% of the severe accidents in the South and
+Southeast. A defensible use is aggregate, indicating combinations of road type,
+stretch and time of day with a higher share of severe outcomes, always together
+with accident counts.
+
+\section{Conclusion}
+
+We audited where the predictive signal comes from when classifying accident
+severity on PRF open data. With 342,670 accidents from 2021 to 2025 and a
+temporal evaluation, context alone proved weakly predictive (PR-AUC 0.395
+against 0.283 without a model); information about the accident dynamics added
+substantially (0.530); and outcome-derived columns produced near-perfect and
+practically useless scores (0.97--0.99). We learned that, on this dataset, the
+choice of features matters far more than the choice of algorithm or split
+strategy, that accuracy hides the problem, and that a model with a reasonable
+national average can behave as an ``always severe'' rule in a whole state.
+
+The main limitations are the absence of variables on speed, protective
+equipment and vehicles, the restriction to recorded accidents, and the small
+set of models compared. As future work we intend to (i) use the person-level and
+vehicle-level PRF data to add the profile of people and vehicles involved;
+(ii) train or threshold models by region; (iii) calibrate the predicted
+probabilities; and (iv) aggregate accidents by highway stretch and combine them
+with traffic volume to estimate the rate of severe accidents per kilometre.
+
+\section*{Data and Code Availability}
+
+The data are public and were obtained from the PRF open data portal, section
+``Acidentes'', files grouped by occurrence, 2021 to 2025:
+\url{https://www.gov.br/prf/pt-br/acesso-a-informacao/dados-abertos/dados-abertos-da-prf}.
+The notebook that downloads the data and reproduces every result, table and
+figure in this paper is available at:
+% PREENCHER: link publico do notebook (Colab ou Kaggle)
+\url{LINK-DO-NOTEBOOK}.
+
+\section*{Use of Large Language Models}
+
+% PREENCHER / AJUSTAR: esta declaracao deve refletir exatamente o que voce fez.
+The author used the Claude assistant (Anthropic), through Claude Code, in the
+following activities: planning of the project steps from the assignment
+description; initial search for related work; generation of the notebook code
+and of first drafts of the notebook text and of this paper; debugging; and
+revision of the English text. The outputs were verified by executing the
+complete notebook, by checking every number in this paper against the notebook
+outputs, and by reading the cited works in their original sources. No output of
+the assistant was used as a scientific source.
+
+\bibliographystyle{sbc}
+\bibliography{refs}
+
+\end{document}
